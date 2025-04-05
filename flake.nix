@@ -40,6 +40,8 @@
             buildInputs = [
               go
               air
+              sqlite
+              sqlc
             ];
           };
         }

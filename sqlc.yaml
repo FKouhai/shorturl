@@ -1,0 +1,9 @@
+version: "2"
+sql:
+  - engine: "sqlite"
+    queries: "queries/query.sql"
+    schema: "schemas/schema.sql"
+    gen:
+      go:
+        package: "url_shortener"
+        out: "db"

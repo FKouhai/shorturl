@@ -1,3 +1,4 @@
+// Package methods provides all the function helpers for gin handlers
 package methods
 
 import (
@@ -14,11 +15,13 @@ func CreateEntry(c *gin.Context, url string) {
 		log.Println("already cached")
 		return
 	}
+
 	err := memstorage.SetValue("0", url)
 	if err != nil {
 		log.Println(err)
 	}
 
+	c.Done()
 }
 
 // isCached checks against valkey if a given string is present in it's memory
@@ -38,12 +41,13 @@ func Redirect(c *gin.Context, path string) {
 		// perform a sql query to fetch the url to redirect to
 		log.Println("path is not cached, performing sql query to get the dst addr")
 	}
+
 	url, err := memstorage.GetKey(path)
 
 	if err != nil {
 		log.Println(err)
 		return
 	}
-	c.Redirect(http.StatusPermanentRedirect, url)
 
+	c.Redirect(http.StatusPermanentRedirect, url)
 }
