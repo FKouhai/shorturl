@@ -35,16 +35,28 @@ func (q *Queries) DeleteUrl(ctx context.Context, id int64) error {
 	return err
 }
 
-const getUrl = `-- name: GetUrl :one
+const getUrlData = `-- name: GetUrlData :one
 SELECT id, name FROM urls
 WHERE id = ? LIMIT 1
 `
 
-func (q *Queries) GetUrl(ctx context.Context, id int64) (Url, error) {
-	row := q.db.QueryRowContext(ctx, getUrl, id)
+func (q *Queries) GetUrlData(ctx context.Context, id int64) (Url, error) {
+	row := q.db.QueryRowContext(ctx, getUrlData, id)
 	var i Url
 	err := row.Scan(&i.ID, &i.Name)
 	return i, err
+}
+
+const getUrlId = `-- name: GetUrlId :one
+SELECT id FROM urls
+WHERE name = ? LIMIT 1
+`
+
+func (q *Queries) GetUrlId(ctx context.Context, name string) (int64, error) {
+	row := q.db.QueryRowContext(ctx, getUrlId, name)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
 }
 
 const getUrls = `-- name: GetUrls :many

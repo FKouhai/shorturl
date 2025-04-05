@@ -3,10 +3,12 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
-	_ "modernc.org/sqlite"
 	"net/http"
 	"url_shortener/methods"
+
+	_ "modernc.org/sqlite"
 
 	"context"
 	_ "embed"
@@ -33,6 +35,11 @@ func init() {
 
 }
 
+// InJSON public struct
+type InJSON struct {
+	Url string `json:"url"`
+}
+
 func main() {
 	router := gin.Default()
 	router.Use(gin.Recovery())
@@ -43,12 +50,28 @@ func main() {
 	})
 
 	router.POST("/addRoute", func(ctx *gin.Context) {
-		methods.CreateEntry(ctx, "https://google.com")
+		j := InJSON{}
+		err := ctx.BindJSON(&j)
+		println(j.Url)
+		if err != nil {
+			log.Println(err)
+		}
+		methods.CreateEntry(ctx, j.Url)
 	})
 
 	router.GET("/redirect/:path", func(ctx *gin.Context) {
 		path := ctx.Params.ByName("path")
 		methods.Redirect(ctx, path)
+	})
+	router.GET("/list", func(ctx *gin.Context) {
+		v, err := methods.ListAll()
+		if err != nil {
+			return
+		}
+		ctx.JSON(http.StatusOK, gin.H{
+			"keys": fmt.Sprintf("%v", v),
+		})
+
 	})
 
 	router.Run("0.0.0.0:7880")

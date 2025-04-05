@@ -26,7 +26,7 @@
         shorturl = pkgs.buildGoModule {
           name = "shorturl";
           src = ./.;
-          vendorHash = "sha256-VErm9jE9Cuz6m0Fvk80OsSr++ibN3w9FObhf0jfgJrc=";
+          vendorHash = "sha256-e82CO4dVbCPLGOVQLDXglKYDD878X+oo4qav3851P1A=";
           proxyVendor = true;
           doCheck = false;
           postInstall = ''

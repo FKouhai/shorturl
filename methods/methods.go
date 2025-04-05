@@ -2,26 +2,90 @@
 package methods
 
 import (
+	"context"
+	"database/sql"
+	"fmt"
 	"log"
 	"net/http"
+	"url_shortener/db"
 	"url_shortener/mem_storage"
+
+	_ "modernc.org/sqlite"
 
 	"github.com/gin-gonic/gin"
 )
 
+func open() (*db.Queries, *sql.DB) {
+	d, err := sql.Open("sqlite", "sqlitedb")
+	if err != nil {
+		log.Println(err)
+	}
+	q := db.New(d)
+	return q, d
+
+}
+
+func lookUPId(url string) (string, error) {
+	query, _ := open()
+	ctx := context.Background()
+	key, err := query.GetUrlId(ctx, url)
+	println(key)
+	if err != nil {
+		log.Println(err)
+		return "", err
+	}
+	return string(key), nil
+
+}
+
+// ListAll method returns a json encoded blob with all the created URL's
+func ListAll() (any, error) {
+	query, _ := open()
+	ctx := context.Background()
+	key, err := query.GetUrls(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return key, nil
+
+}
+
 // CreateEntry adds a new entry in the database based on the api path given
 func CreateEntry(c *gin.Context, url string) {
-	if !isCached("0") {
-		log.Println("already cached")
-		return
+	v, err := lookUPId(url)
+	if err != nil {
+		log.Println(err)
+	}
+	if !isCached(v) || !isLTS(url) {
+		log.Println("already created")
+	}
+	query, _ := open()
+	ctx := context.Background()
+	log.Println(url)
+	_, err = query.CreateUrl(ctx, url)
+
+	if err != nil {
+		log.Println(err)
 	}
 
-	err := memstorage.SetValue("0", url)
+	err = memstorage.SetValue(v, url)
 	if err != nil {
 		log.Println(err)
 	}
 
 	c.Done()
+}
+
+func isLTS(url string) bool {
+	query, _ := open()
+	ctx := context.Background()
+	_, err := query.GetUrlId(ctx, url)
+	if err != nil {
+		log.Println(err)
+		return false
+	}
+	return true
+
 }
 
 // isCached checks against valkey if a given string is present in it's memory
@@ -34,20 +98,35 @@ func isCached(url string) bool {
 
 	return true
 }
+func toInt64(v string) int64 {
+	var i int64
+	fmt.Sscan(v, &i)
+	return i
+}
 
 // Redirect is used to forward the traffic on the given path to the actual service
 func Redirect(c *gin.Context, path string) {
+	var url string
+	q, _ := open()
+	ctx := context.Background()
 	if !isCached(path) {
-		// perform a sql query to fetch the url to redirect to
+		i := toInt64(path)
+		d, _ := q.GetUrlData(ctx, i)
+		url = d.Name
+		id := string(d.ID)
 		log.Println("path is not cached, performing sql query to get the dst addr")
+		err := memstorage.SetValue(id, url)
+		if err != nil {
+			log.Fatalln("Unable to create entry in valkey ->", err)
+		}
+		c.Redirect(http.StatusPermanentRedirect, url)
+	} else {
+		url, err := memstorage.GetKey(path)
+		if err != nil {
+			log.Println(err)
+		}
+		log.Println("url has been cached")
+		c.Redirect(http.StatusPermanentRedirect, url)
 	}
 
-	url, err := memstorage.GetKey(path)
-
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	c.Redirect(http.StatusPermanentRedirect, url)
 }
