@@ -7,7 +7,9 @@ import (
 	"log"
 	"net/http"
 	"url_shortener/methods"
+	"url_shortener/tracer"
 
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 	_ "modernc.org/sqlite"
 
 	"context"
@@ -30,8 +32,10 @@ func init() {
 	if _, err := db.ExecContext(ctx, ddl); err != nil {
 		log.Println(err)
 	}
-	db.Close()
-	//_ = dbpkg.New(db)
+	err = db.Close()
+	if err != nil {
+		log.Println(err)
+	}
 
 }
 
@@ -41,8 +45,18 @@ type InJSON struct {
 }
 
 func main() {
+	tp, err := tracer.InitTracer()
+	if err != nil {
+		log.Fatalln(err)
+	}
+	defer func() {
+		if err := tp.Shutdown(context.Background()); err != nil {
+			log.Printf("Error shutting down tracer provider: %v", err)
+		}
+	}()
 	router := gin.Default()
 	router.Use(gin.Recovery())
+	router.Use(otelgin.Middleware("shorturl"))
 	router.GET("/healthz", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"status": "OK",
@@ -66,6 +80,7 @@ func main() {
 	router.GET("/list", func(ctx *gin.Context) {
 		v, err := methods.ListAll()
 		if err != nil {
+			log.Println(err)
 			return
 		}
 		ctx.JSON(http.StatusOK, gin.H{
@@ -74,6 +89,9 @@ func main() {
 
 	})
 
-	router.Run("0.0.0.0:7880")
+	err = router.Run("0.0.0.0:7880")
+	if err != nil {
+		log.Println(err)
+	}
 
 }

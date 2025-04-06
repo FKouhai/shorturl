@@ -80,27 +80,22 @@ func isLTS(url string) bool {
 	query, _ := open()
 	ctx := context.Background()
 	_, err := query.GetUrlId(ctx, url)
-	if err != nil {
-		log.Println(err)
-		return false
-	}
-	return true
+	return err == nil
 
 }
 
 // isCached checks against valkey if a given string is present in it's memory
 func isCached(url string) bool {
 	_, err := memstorage.GetKey(url)
+	return err == nil
 
-	if err != nil {
-		return false
-	}
-
-	return true
 }
 func toInt64(v string) int64 {
 	var i int64
-	fmt.Sscan(v, &i)
+	_, err := fmt.Sscan(v, &i)
+	if err != nil {
+		return -1
+	}
 	return i
 }
 

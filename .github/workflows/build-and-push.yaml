@@ -1,0 +1,37 @@
+---
+name: "Build and push image to ghcr.io"
+on:
+  push:
+    tags: 
+     - '*'
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        system:
+          - aarch64-linux
+          - x86_64-linux
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: set up quemu
+        uses: docker/setup-quemu-action@v3
+        with:
+          platforms: arm64
+      - uses: DeterminateSystems/nix-installer-action@main
+        with:
+          extra-conf: |
+            extra-platforms = aarch64-linux
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+      - name: Log into ghcr
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.arctor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - run: |
+          "nix build --no-out-link --option sandbox true .#dockerImage.${{ matrix.system}}"
+          "docker image load --input result"
+          "docker image tag shorturl:latest ${{ env.REGISTRY }}/shorturl:${{ steps.meta.outputs.tags }}"
+          "docker push ${{ env.REGISTRY }}/shorturl:${{ steps.meta.outputs.tags }}"

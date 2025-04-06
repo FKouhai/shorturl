@@ -1,0 +1,18 @@
+on: [pull_request]
+jobs:
+  check_flake:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+      - name: installing alejandra for style check
+        run: nix-env -ivf https://github.com/kamadorueda/alejandra/tarball/3.1.0 
+      - name: checking the flake outputs
+        run: nix flake check
+      - name: checking if the style is alejandra compliance
+        run: alejandra -c . 
+
