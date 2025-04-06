@@ -40,6 +40,10 @@
           copyToRoot = [shorturl];
           config = {
             Cmd = ["${shorturl}/bin/shorturl"];
+            Env = [
+              "OTEL_EP=$OTEL_EP"
+              "VALKEY_SERVER=$VALKEY_SERVER"
+            ];
           };
         };
       in
