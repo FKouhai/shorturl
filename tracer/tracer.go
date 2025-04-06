@@ -3,7 +3,10 @@ package tracer
 
 import (
 	"context"
+	"fmt"
 	"os"
+
+	"sync"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -12,7 +15,12 @@ import (
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/trace"
 )
+
+var tp *sdktrace.TracerProvider
+var tracer trace.Tracer
+var once sync.Once
 
 // InitTracer starts the otel tracer
 func InitTracer() (*sdktrace.TracerProvider, error) {
@@ -20,6 +28,7 @@ func InitTracer() (*sdktrace.TracerProvider, error) {
 		"content-type": "application/json",
 	}
 	ep := os.Getenv("OTEL_EP")
+	fmt.Printf("\tusing OTEL_EP=%s\n", ep)
 	exporter, err := otlptrace.New(
 		context.Background(),
 		otlptracehttp.NewClient(
@@ -41,13 +50,25 @@ func InitTracer() (*sdktrace.TracerProvider, error) {
 	if err != nil {
 		return nil, err
 	}
-	tp := sdktrace.NewTracerProvider(
-		sdktrace.WithSampler(sdktrace.AlwaysSample()),
-		sdktrace.WithBatcher(exporter),
-		sdktrace.WithResource(resources),
-	)
-	otel.SetTracerProvider(tp)
-	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
-	return tp, nil
 
+	once.Do(func() {
+		tp = sdktrace.NewTracerProvider(
+			sdktrace.WithSampler(sdktrace.AlwaysSample()),
+			sdktrace.WithBatcher(exporter),
+			sdktrace.WithResource(resources),
+		)
+		otel.SetTracerProvider(tp)
+		otel.SetTextMapPropagator(
+			propagation.NewCompositeTextMapPropagator(propagation.TraceContext{},
+				propagation.Baggage{}),
+		)
+
+		tracer = tp.Tracer("shorturl")
+	})
+
+	return tp, nil
+}
+
+func GetTracer() trace.Tracer {
+	return tracer
 }
