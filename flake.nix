@@ -26,20 +26,32 @@
         shorturl = pkgs.buildGoModule {
           name = "shorturl";
           src = ./.;
-          vendorHash = "sha256-VErm9jE9Cuz6m0Fvk80OsSr++ibN3w9FObhf0jfgJrc=";
+          vendorHash = "sha256-T6/aGn/UG329oAjFuSqHp/jmY2ZCbhhxdA1c9gkM4Cs=";
           proxyVendor = true;
           doCheck = false;
           postInstall = ''
             mv $out/bin/url_shortener $out/bin/shorturl
           '';
         };
+        dockerImage = pkgs.dockerTools.buildImage {
+          name = "shorturl";
+          tag = "latest";
+          created = "now";
+          copyToRoot = [shorturl];
+          config = {
+            Cmd = ["${shorturl}/bin/shorturl"];
+          };
+        };
       in
         with pkgs; {
+          inherit shorturl dockerImage;
           defaultPackage = shorturl;
           devShells.default = mkShell {
             buildInputs = [
               go
               air
+              sqlite
+              sqlc
             ];
           };
         }
