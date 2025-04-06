@@ -8,14 +8,17 @@ This project aims to be a cloud native service that consists on the following ar
 ## Development
 Running `nix develop` would create a shell with the dependencies that made the development of this project possible
 
+## Build using nix
+In order to build the project there's 2 possible ways:
+* `nix build .#dockerImage.<architecture> # architecture could be x86_64-linux`
+* `nix build`
+
 ## TODO
-* Include in the nix flake the build of the container image for the main service
 * helm chart for the project that provides:
     * valkey config
     * mysql config
     * psql config
     * sqlite config
 * docker-compose that uses the default db's 
-* Instrumentation using the OTEL sdk
 * github workflow to build the project
     * Ideally speaking the workflow would run a nix build command to build the binary, build the docker image(s) and build the charts
