@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"url_shortener/db"
 	"url_shortener/mem_storage"
 
@@ -34,7 +35,8 @@ func lookUPId(url string) (string, error) {
 		log.Println(err)
 		return "", err
 	}
-	return string(key), nil
+	sKey := strconv.FormatInt(key, 10)
+	return sKey, nil
 
 }
 
@@ -108,7 +110,7 @@ func Redirect(c *gin.Context, path string) {
 		i := toInt64(path)
 		d, _ := q.GetUrlData(ctx, i)
 		url = d.Name
-		id := string(d.ID)
+		id := strconv.FormatInt(d.ID, 10)
 		log.Println("path is not cached, performing sql query to get the dst addr")
 		err := memstorage.SetValue(id, url)
 		if err != nil {

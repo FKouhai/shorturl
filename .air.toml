@@ -4,7 +4,7 @@ tmp_dir = "tmp"
 
 [build]
   args_bin = []
-  bin = ";VALKEY_SERVER=localhost:32768 ./tmp/main"
+  bin = ";VALKEY_SERVER=localhost:32768 OTEL_EP=localhost:4318 ./tmp/main"
   cmd = "go build -o ./tmp/main ."
   delay = 1000
   exclude_dir = ["assets", "tmp", "vendor", "testdata"]
