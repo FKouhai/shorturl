@@ -78,7 +78,7 @@ func main() {
 		methods.Redirect(ctx, path)
 	})
 	router.GET("/list", func(ctx *gin.Context) {
-		v, err := methods.ListAll()
+		v, err := methods.ListAll(ctx)
 		if err != nil {
 			log.Println(err)
 			return
