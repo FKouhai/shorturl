@@ -55,6 +55,10 @@ func main() {
 		}
 	}()
 	router := gin.Default()
+	// refer to https://github.com/gin-gonic/gin/issues/2697#issuecomment-829071839
+	router.ForwardedByClientIP = true
+	router.SetTrustedProxies([]string{"0.0.0.0/0"})
+	router.RemoteIPHeaders = []string{"X-Forwarded-For", "X-Real-IP"}
 	router.Use(gin.Recovery())
 	router.Use(otelgin.Middleware("shorturl"))
 	router.GET("/healthz", func(c *gin.Context) {
