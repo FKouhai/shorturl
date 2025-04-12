@@ -140,7 +140,7 @@ func Redirect(c *gin.Context, path string) {
 		log.Println("path is not cached, performing sql query to get the dst addr")
 		err := memstorage.SetValue(id, url)
 		if err != nil {
-			log.Fatalln("Unable to create entry in valkey ->", err)
+			log.Println("Unable to create entry in valkey ->", err)
 			span.RecordError(err)
 		}
 		c.Redirect(http.StatusPermanentRedirect, url)
