@@ -22,9 +22,9 @@ helm install -f urlshort/values.yaml urlshort ./urlshort
 ```
 ## OTEL TRACING
 As of right now only the OTEL grpc endpoint is supported
-### traces
+### service metrics
 ![image](https://github.com/user-attachments/assets/96ec4ada-528e-4b28-9fd4-fed3f7da2265)
-### spans
+### trace explorer
 ![image](https://github.com/user-attachments/assets/c6196324-fb05-4dc1-bfd1-99ef01910b49)
 
 
