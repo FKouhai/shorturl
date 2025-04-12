@@ -13,12 +13,18 @@ In order to build the project there's 2 possible ways:
 * `nix build .#dockerImage.<architecture> # architecture could be x86_64-linux`
 * `nix build`
 
+## Installation via helm
+```(bash)
+git clone git@github.com:FKouhai/shorturl.git
+cd shorturl
+# update the values inside of urlshort/
+helm install -f urlshort/values.yaml urlshort ./urlshort
+```
+## OTEL TRACING
+As of right now only the OTEL grpc endpoint is supported
+![image](https://github.com/user-attachments/assets/96ec4ada-528e-4b28-9fd4-fed3f7da2265)
+
 ## TODO
-* helm chart for the project that provides:
-    * valkey config
-    * mysql config
-    * psql config
-    * sqlite config
 * docker-compose that uses the default db's 
 * github workflow to build the project
     * Ideally speaking the workflow would run a nix build command to build the binary, build the docker image(s) and build the charts
