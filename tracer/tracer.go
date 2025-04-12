@@ -11,7 +11,7 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
@@ -31,10 +31,10 @@ func InitTracer() (*sdktrace.TracerProvider, error) {
 	fmt.Printf("\tusing OTEL_EP=%s\n", ep)
 	exporter, err := otlptrace.New(
 		context.Background(),
-		otlptracehttp.NewClient(
-			otlptracehttp.WithEndpoint(ep),
-			otlptracehttp.WithHeaders(headers),
-			otlptracehttp.WithInsecure(),
+		otlptracegrpc.NewClient(
+			otlptracegrpc.WithEndpoint(ep),
+			otlptracegrpc.WithHeaders(headers),
+			otlptracegrpc.WithInsecure(),
 		),
 	)
 	if err != nil {
