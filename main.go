@@ -2,47 +2,61 @@
 package main
 
 import (
-	"database/sql"
-	"fmt"
-	"log"
-	"net/http"
-	"url_shortener/methods"
-	"url_shortener/tracer"
-
-	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
-	_ "modernc.org/sqlite"
-
 	"context"
+	"database/sql"
 	_ "embed"
-
-	"github.com/gin-gonic/gin"
+	"log"
+	_ "modernc.org/sqlite"
+	"url_shortener/router"
+	"url_shortener/tracer"
 )
 
 //go:embed schemas/schema.sql
 var ddl string
 
+// Initializes the database connection and executes DDL statements.
 func init() {
 	ctx := context.Background()
-	db, err := sql.Open("sqlite", "sqlitedb")
 
+	db, err := sql.Open("sqlite", "sqlitedb")
+	if err != nil {
+		log.Fatalln(err)
+	}
+	defer db.Close()
+
+	err = db.PingContext(ctx)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	if _, err := db.ExecContext(ctx, ddl); err != nil {
-		log.Println(err)
-	}
-	err = db.Close()
+	_, err = db.ExecContext(ctx, ddl)
 	if err != nil {
 		log.Println(err)
+		return
+	}
+}
+func init() {
+	ctx := context.Background()
+
+	db, err := sql.Open("sqlite", "sqlitedb")
+	if err != nil {
+		log.Fatalln(err)
+	}
+	defer db.Close()
+
+	err = db.PingContext(ctx)
+	if err != nil {
+		log.Fatalln(err)
 	}
 
+	_, err = db.ExecContext(ctx, ddl)
+	if err != nil {
+		log.Println(err)
+		return
+	}
 }
 
 // InJSON public struct
-type InJSON struct {
-	Url string `json:"url"`
-}
 
 func main() {
 	tp, err := tracer.InitTracer()
@@ -54,45 +68,7 @@ func main() {
 			log.Printf("Error shutting down tracer provider: %v", err)
 		}
 	}()
-	router := gin.Default()
-	// refer to https://github.com/gin-gonic/gin/issues/2697#issuecomment-829071839
-	router.ForwardedByClientIP = true
-	router.SetTrustedProxies([]string{"0.0.0.0/0"})
-	router.RemoteIPHeaders = []string{"X-Forwarded-For", "X-Real-IP"}
-	router.Use(gin.Recovery())
-	router.Use(otelgin.Middleware("shorturl"))
-	router.GET("/healthz", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"status": "OK",
-		})
-	})
-
-	router.POST("/addRoute", func(ctx *gin.Context) {
-		j := InJSON{}
-		err := ctx.BindJSON(&j)
-		println(j.Url)
-		if err != nil {
-			log.Println(err)
-		}
-		methods.CreateEntry(ctx, j.Url)
-	})
-
-	router.GET("/redirect/:path", func(ctx *gin.Context) {
-		path := ctx.Params.ByName("path")
-		methods.Redirect(ctx, path)
-	})
-	router.GET("/list", func(ctx *gin.Context) {
-		v, err := methods.ListAll(ctx)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		ctx.JSON(http.StatusOK, gin.H{
-			"keys": fmt.Sprintf("%v", v),
-		})
-
-	})
-
+	router := router.SetRouter()
 	err = router.Run("0.0.0.0:7880")
 	if err != nil {
 		log.Println(err)
