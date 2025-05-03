@@ -10,36 +10,37 @@
     };
   };
 
-  outputs = {
-    self,
-    nixpkgs,
-    flake-utils,
-    gomod2nix,
-  }:
+  outputs =
+    {
+      self,
+      nixpkgs,
+      flake-utils,
+      gomod2nix,
+    }:
     flake-utils.lib.eachDefaultSystem (
-      system: let
+      system:
+      let
         pkgs = import nixpkgs {
           inherit system;
-          overlays = [gomod2nix.overlays.default];
+          overlays = [ gomod2nix.overlays.default ];
           config.allowUnfree = true;
         };
         shorturl = pkgs.buildGoModule {
           name = "shorturl";
           src = ./.;
-          vendorHash = "sha256-hs3daARUdrgRMr6+ACAZGtVRmta9xOQ1ezEoi+79NZE=";
+          vendorHash = "sha256-9eRnck99nbwD1qThmRFOms7Tcvnnl9AmepjrU6lyhsY=";
           proxyVendor = true;
           doCheck = false;
           postInstall = ''
             mv $out/bin/url_shortener $out/bin/shorturl
           '';
         };
-        dockerImage = pkgs.dockerTools.buildImage {
+        dockerImage = pkgs.dockerTools.buildLayeredImage {
           name = "shorturl";
           tag = "latest";
           created = "now";
-          copyToRoot = [shorturl];
           config = {
-            Cmd = ["${shorturl}/bin/shorturl"];
+            Cmd = [ "${shorturl}/bin/shorturl" ];
             Env = [
               "OTEL_EP=$OTEL_EP"
               "VALKEY_SERVER=$VALKEY_SERVER"
@@ -47,17 +48,18 @@
           };
         };
       in
-        with pkgs; {
-          inherit shorturl dockerImage;
-          defaultPackage = shorturl;
-          devShells.default = mkShell {
-            buildInputs = [
-              go
-              air
-              sqlite
-              sqlc
-            ];
-          };
-        }
+      with pkgs;
+      {
+        inherit shorturl dockerImage;
+        defaultPackage = shorturl;
+        devShells.default = mkShell {
+          buildInputs = [
+            go
+            air
+            sqlite
+            sqlc
+          ];
+        };
+      }
     );
 }

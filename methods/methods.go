@@ -17,6 +17,14 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// Dbint interface with all the db methods
+type Dbint interface {
+	Open(a string, b string) (*sql.DB, error)
+	GetUrlId(c context.Context, url string) (int64, error)
+	GetUrls(c context.Context) ([]db.Url, error)
+	CreateUrl(c context.Context, url string) (db.Url, error)
+}
+
 func open(ctx context.Context) (*db.Queries, *sql.DB) {
 	_, span := tracer.GetTracer().Start(ctx, "open")
 	defer span.End()
